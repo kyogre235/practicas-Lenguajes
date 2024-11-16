@@ -1,0 +1,373 @@
+#+title: Práctica 5: MiniLisp v3.1
+#+author: Erik Rangel Limón
+
+* Objetivos
+
+  Añadir las expresiones condicionales =if= y =cond= en el lenguaje, y
+  cambiar la estrategia de evaluación del lenguaje por una perezosa,
+  utilizando puntos estrictos.
+
+* Instrucciones
+
+  1. Para ésta práctica necesitan tener instalado /GHC/ y /Cabal/.
+
+     Pueden instalarlos de dos maneras:
+
+     - /ghcup/ (recomendada):
+
+       Es una herramienta para administrar las distintas versiones de
+       /GHC/, /Cabal/, /Stack/ y otras herramientas del lenguaje de
+       programación /Haskell/.
+
+       La página oficial con las instrucciones es la siguiente:
+
+       [[https://www.haskell.org/ghcup/install/#installation]]
+
+       En la página encontraran la línea de comando adecuada para
+       instalar la herramienta según su sistema operativo.
+
+       Antes de seguir la instalación asegúrense de tener instalados
+       los [[https://www.haskell.org/ghcup/install/#system-requirements][programas requeridos]].
+
+       Cuando ejecuten el comando de instalación les saldrá un prompt
+       que les preguntará si desean continuar con la instalación; para
+       continuar deberán presionar =Enter=.
+
+       Después les hará una serie de preguntas sobre la instalación:
+       Si quieren que /ghcup/ y los demás binarios se agreguen a las
+       variables de entorno, si desean instalar un servidor de
+       lenguaje, entre otras. Cada una de estas preguntas selecciona
+       una opción por defecto si no escogen ninguna al presionar
+       =Enter=, estas opciones serán suficientes para sus prácticas.
+
+       Al terminar la instalación deberán reiniciar su =shell= (o su
+       terminal) y podrán corroborar la instalación de /ghcup/ con el
+       comando.
+
+       #+begin_src bash
+ghcup tui
+       #+end_src
+
+       Les saldrá un menú interactivo en su terminal en donde podrán
+       administrar las versiones de los programas.
+
+       Procuren usar las versiones recomendadas tanto de /Haskell/ como
+       de /Cabal/.
+
+     - /Linux/:
+
+       Depende de su distribución, pero busquen cómo instalar los
+       programas, por lo general tienen el nombre de /ghc/ y
+       /cabal-install/ en la mayoría de administradores de paquetes.
+  
+  2. Necesitan las biblioteca /QuickCheck/, /IEEE754/ y /Haskeline/.
+
+     Una vez teniendo /GHC/ y /Cabal/, la biblioteca puede instalarse con
+     la siguiente línea de comandos:
+
+     #+begin_src bash
+$ cabal update
+     #+end_src
+
+     Seguido de:
+
+     #+begin_src bash
+$ cabal install --lib QuickCheck
+$ cabal install --lib ieee754
+$ cabal install --lib haskeline
+     #+end_src
+
+     Pueden corroborar la instalación de las bibliotecas abriendo el
+     intérprete e importando:
+
+     #+begin_src bash
+$ ghci -package haskeline
+Loaded package environment from /home/pppkizbroutle/.ghc/x86_64-linux-9.4.8/environments/default
+GHCi, version 9.4.8: https://www.haskell.org/ghc/  :? for help
+ghci> import Test.QuickCheck
+ghci> import Data.AEq
+ghci> import System.Console.Haskeline
+ghci>
+     #+end_src
+
+     Si no les arroja errores, entonces la instalación fue exitosa.
+
+  3. Necesitarán el programa /Happy/.
+
+     la biblioteca puede instalarse con la siguiente línea de
+     comandos:
+
+     #+begin_src bash
+$ cabal update
+$ cabal install happy
+     #+end_src
+
+     Al terminarse de intalar podrán corroborar su instalación de la
+     siguiente forma:
+
+     #+begin_src bash
+$ happy --version
+Happy Version 1.20.1.1 Copyright (c) 1993-1996 Andy Gill, Simon Marlow (c) 1997-2005 Simon Marlow
+
+Happy is a Yacc for Haskell, and comes with ABSOLUTELY NO WARRANTY.
+This program is free software; you can redistribute it and/or modify
+it under the terms given in the file 'LICENSE' distributed with
+the Happy sources.
+     #+end_src
+
+  4. Deberán resolver los ejercicios de los archivos =src/Lexer.hs=,
+     =src/Parser.y=, =src/Desugar.hs= y =src/Interp.hs=.
+
+  5. Verifiquen su solución.
+
+     Pueden hacerlo de dos formas:
+
+     - /runhaskell/:
+
+       Estando, en la carpeta =src= pueden ejecutar un pequeño
+       intérprete del lenguaje con el siguiente comando:
+
+       #+begin_src bash
+$ ./repl.sh
+Mini-Lisp v3.0. Bienvenido.
+>
+       #+end_src
+  
+       Pueden evaluar expresiones del lenguaje en éste intérprete:
+
+       #+begin_src bash
+> #t
+#t
+> 1.1786e-5
+1.1786e-5
+> (< (- 2.5 3.57) 0.1 (sqrt 1.15e5))
+#t
+> (+ (* 2 55.2) (add1 2.88) (/ (sqrt 2) 2))
+114.98710678118655
+>
+       #+end_src
+
+       Hemos actualizado el =Repl= para asemejar el comportamiento que
+       tendría comúnmente una terminal, como borrar con la tecla
+       =backspace=, navegación del cursor con las flechas, historial de
+       comandos, entre otros, gracias a la biblioteca =haskeline=.
+
+       Pueden ver más combinaciones de teclas aquí:
+       <https://github.com/judah/haskeline/wiki/KeyBindings#commands-shared-by-both-bindings>
+
+       <https://github.com/judah/haskeline/wiki/KeyBindings#emacs-specific-bindings>
+
+       Pueden ejecutar los tests con el comando =test <numero_de_pruebas>=:
+       
+       #+begin_src bash
+> test 1000
+=== prop_lexer_ok from ./Test.hs:522 ===
++++ OK, passed 1000 tests.
+
+=== prop_parser_ok from ./Test.hs:530 ===
++++ OK, passed 1000 tests.
+
+=== prop_desugar_ok from ./Test.hs:537 ===
++++ OK, passed 1000 tests.
+
+=== prop_interp_ok from ./Test.hs:547 ===
++++ OK, passed 1000 tests.
+       #+end_src
+
+     - /ghci/:
+
+       Dentro de la carpeta =src= pueden interpretar los tests con el siguiente comando:
+
+       #+begin_src bash
+$ ghci -package array -package transformers Test.hs
+Loaded package environment from /home/pppkizbroutle/.ghc/x86_64-linux-9.4.8/environments/default
+GHCi, version 9.4.8: https://www.haskell.org/ghc/  :? for help
+[1 of 4] Compiling Lexer            ( Lexer.hs, interpreted )
+[2 of 4] Compiling Parser           ( Parser.hs, interpreted )
+[3 of 4] Compiling Interp           ( Interp.hs, interpreted )
+[4 of 4] Compiling Test             ( Test.hs, interpreted )
+Ok, four modules loaded.
+ghci>
+       #+end_src
+
+       Pueden ejecutar las pruebas de forma individual de la siguiente
+       forma:
+
+       #+begin_src haskell
+ghci> quickCheck prop_<nombre_de_la_propiedad>
++++ OK, passed 100 tests.
+       #+end_src
+
+  6. Resuelvan el cuestionario en el archivo =README.md= e incluyan los nombres de los integrantes del equipo.
+
+* Especificación
+
+  La pueden entontrar en el [[./minilisp.pdf][pdf]]
+  
+* Ejercicios
+
+  Deberán actualizar la definición de los archivos =Interp.hs=,
+  =Parser.hs= y =Lexer.hs= que definieron en su práctica anterior.
+
+  1. /Analizador Léxico/. (1 pto.)
+
+     Actualicen su definición de tipo de dato =Token=, la instancia
+     =Show=, y la función =lexer= para reconocer los nuevos lexemas del
+     lenguaje.
+
+     Este primer ejercicio cuenta con la propiedad =prop_lexer_ok= que
+     verifica la correcta implementación del =lexer=. Para pasar esta
+     prueba, necesitarán definir correctamente la instancia =Show=.
+
+     Cuando se ejecuten las pruebas, si ocurrieron errores les
+     mostrará que expresión se intentó evaluar, cuál fue el resultado
+     esperado y el resultado que dió la evaluación.
+
+     Pueden utilizar cualquier función de la biblioteca =Data.Char=.
+
+  2. /Analizador sintáctico/. (1 pto.)
+
+     Actualicen la definición del nuevo tipo de dato =SASA=, que
+     corresponde al de la sintaxis /endulzada/ del lenguaje y su
+     instancia =Show=, añadan los nuevos símbolos terminales y
+     actualicen la definición de la sintaxis concreta.
+
+     Al terminar de definir el archivo, tendrán que utilizar =happy=
+     para generar el archivo =Parser.hs= correspondiente, en la carpeta
+     =src= deberán ejecutar:
+
+     #+begin_src bash
+$ happy Parser.y
+     #+end_src
+
+     Este ejercicio cuenta con la prueba =prop_parser_ok=, que verifica
+     que el parser generado funcione correctamente. Para pasar esta
+     prueba necesitarán haber tenido correcto el =lexer= del ejercicio
+     anterior, y haber definido la instancia de =Show= correctamente.
+
+     Cuando se ejecuten las pruebas, si ocurrieron errores les
+     mostrará qué expresión se intentó evaluar, cuál fue el resultado
+     esperado y el resultado que dió la evaluación.
+
+  3. /Desendulzado/. (3 pts.)
+
+     Tendrán que actualizar la definición del archivo =src/Desugar.hs=
+     para transformar los condicionales añadidos; los =cond= se deben
+     transformar a =if=.
+
+     Tendrán que definir el tipo de dato =ASA=, que contiene la sintaxis
+     abstracta del lenguaje sin /endulzar/; así mismo deberán definir la
+     instancia =Show= correspondiente en donde deberán mostrar el árbol
+     de sintaxis abstracta tal y como se escribiría en el lenguaje
+     original.
+
+     Este ejercicio cuenta con la prueba =prop_desugar_ok=, que verifica
+     que el proceso de /desendulzamiento/ se haya realizado
+     correctamente. Para pasar esta prueba necesitarán haber tenido
+     correcto el =lexer= y el =parser= de los ejercicios anteriores, y que
+     hayan definido la instancia =Show= correctamete.
+  
+  4. /Semántica natural/. (5 pts.)
+
+     El archivo =src/Interp.hs= ha cambiado, en él encontrarán lo
+     siguiente:
+
+     #+begin_src haskell
+module Interp where
+
+import Desugar
+import Parser
+
+data Value
+
+type Env = [(String,Value)]
+
+num :: Value -> Double
+num = undefined
+
+bool :: Value -> Bool
+bool = undefined
+
+instance Show Value where
+  show = undefined
+
+interp :: ASA -> Env -> Value
+interp = undefined
+
+strict :: Value -> Value
+strict = undefined
+     #+end_src
+
+     La estrategia de evaluación debe cambiar, ahora al almacenar
+     nuevas variables en el ambiente, deberán guardar la expresión sin
+     evaluar, lo cual implica que tendrán que añadir una entrada nueva
+     para que un =Value= pueda guardar árboles de sintaxis abstracta
+     junto con un "snapshot" del ambiente.
+
+     Tienen que definir las funciones =num= y =bool= que regresan un
+     número o un booleano según qué contenga un valor, en caso de no
+     poder obtener el número o booleano correspondiente directamente
+     deberán regresar un error.
+
+     Por último, tienen que definir la instancia =Show= del tipo =Value=,
+     donde únicamente tendrán que mostrar el cadena los valores. No es
+     tan importante definir cómo se deben mostrar las funciones, pero
+     si quieren ser completos, éstos se pueden mostrar sencillamente
+     como =#<procedure>=.
+  
+     Este ejercicio cuenta con la prueba =prop_interp_ok=, que verifica
+     que el resultado al que llega una expresión sea el esperado o un
+     aproximado (en caso de ser un número de punto flotante). Para
+     pasar ésta prueba necesitarán haber tenido correctos el =lexer=, el
+     =parser=, y el =desugar=, de los ejercicios anteriores y
+     adicionalmente haber definido las funciones =num=, =bool= y la
+     instancia =Show= correctamente.
+
+* Consideraciones
+
+  1. La entrega es por medio de la plataforma /Github Classroom/.
+     
+  2. Pueden hacer equipos de hasta 3 personas.
+
+  3. Todas las prácticas con copias totales o parciales tanto en el
+     código como en el =README= serán evaluadas con cero.
+
+  4. Las únicas funciones con soluciones iguales admisibles son todas
+     aquellas que sean iguales a las resueltas por el grupo en el
+     laboratorio.
+
+  5. No entregar el =README= se penalizará con hasta dos puntos menos
+     sobre su calificación de la práctica.
+
+  6. Cada día de retraso se penalizará con un punto sobre la
+     calificación de la práctica.
+
+  7. Pueden usar cualquier función de alguna biblioteca estándar de
+     /Haskell/, siempre que:
+
+     - No resuelva directamente el ejercicio.
+
+     - No requiera instalación manual.
+
+     - Indicar en el =README= si la ejecución de los Tests cambia
+       (e.g. Si las paqueterías que quieren usar están en /Haskell/,
+       pero están ocultas, deberán indicar cómo adaptar la línea de
+       comandos para ejecutar los Tests para que tome en cuenta las
+       bibliotecas que van a usar).
+
+  8. Las pruebas de esta práctica no deben tardar más de un minuto. Al
+     momento de calificar se harán al menos 100, si su solución tarda
+     más de un minuto aún con 100, consideren otra solución.
+
+  9. Pueden hacer tantas funciones auxiliares como quieran, pero no
+     deben modificar la firma de las funciones ni de las variables,
+     ni la definición de tipos de dato que se les dió.
+
+  10. No se recibirán prácticas que no compilen. Si no resuelven
+      alguna de las funciones déjenlas como =undefined=, pero no
+      eliminen la función, ya que ésto lanzará errores.
+
+  11. No deben modificar los archivos =Test.hs= ni =Repl.hs=. Si
+      encuentran errores o tienen dudas sobre las pruebas, manden un
+      correo al ayudante de laboratorio.
+
